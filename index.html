@@ -7,7 +7,14 @@
 <meta property="og:title" content="BRACKET — Tournament Manager">
 <meta property="og:description" content="Free, offline, no account needed. Built for real people who run real tournaments.">
 <meta name="theme-color" content="#0a0a0c">
-<title>BRACKET — Tournament Manager</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Brackets">
+<title>Brackets — Tournament Manager</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
 <style>
@@ -147,6 +154,15 @@ nav {
   transition: all 0.2s; display: inline-block;
 }
 .cta-secondary:hover { border-color: var(--silver); color: var(--text); }
+.cta-install {
+  padding: 16px 32px;
+  background: none; color: var(--gold);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px; font-weight: 600; letter-spacing: 1px;
+  border: 1px solid var(--gold-dim); border-radius: 10px;
+  cursor: pointer; transition: all 0.2s;
+}
+.cta-install:hover { background: rgba(240,180,41,0.08); border-color: var(--gold); box-shadow: 0 0 20px rgba(240,180,41,0.2); }
 
 .hero-pills {
   display: flex; gap: 10px; flex-wrap: wrap;
@@ -339,7 +355,34 @@ footer {
 .reveal-delay-4 { transition-delay: 0.4s; }
 .reveal-delay-5 { transition-delay: 0.5s; }
 
-/* ── RESPONSIVE ── */
+/* ── iOS INSTALL MODAL ── */
+.ios-modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 999;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+  align-items: flex-end; justify-content: center; padding: 20px;
+}
+.ios-modal-overlay.show { display: flex; }
+.ios-modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 32px 28px; width: 100%; max-width: 400px;
+  position: relative; text-align: center;
+}
+.ios-modal::after {
+  content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+  border: 10px solid transparent; border-top-color: var(--border);
+  border-bottom: none;
+}
+.ios-modal-close {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: none; color: var(--muted);
+  font-size: 20px; cursor: pointer; line-height: 1;
+}
+.ios-modal-icon { font-size: 40px; margin-bottom: 12px; }
+.ios-modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; margin-bottom: 8px; }
+.ios-modal-body { font-size: 13px; color: var(--silver); line-height: 1.8; }
+.ios-modal-body .step { display: flex; align-items: center; gap: 10px; margin-top: 14px; text-align: left; }
+.ios-modal-body .step-icon { font-size: 20px; flex-shrink: 0; }
+.ios-modal-body strong { color: var(--text); }
 @media (max-width: 768px) {
   nav { padding: 14px 20px; }
   .story-grid { grid-template-columns: 1fr; gap: 36px; }
@@ -376,6 +419,7 @@ footer {
   </p>
   <div class="hero-cta-row">
     <a href="app.html" class="cta-primary">Launch the App →</a>
+    <button class="cta-install" id="install-btn">⬇ Install App</button>
     <a href="#story" class="cta-secondary">Read the Story</a>
   </div>
   <div class="hero-pills">
@@ -562,11 +606,26 @@ footer {
   </div>
 </section>
 
+<!-- iOS INSTALL MODAL -->
+<div class="ios-modal-overlay" id="ios-modal">
+  <div class="ios-modal">
+    <button class="ios-modal-close" id="ios-modal-close">✕</button>
+    <div class="ios-modal-icon">📲</div>
+    <div class="ios-modal-title">Install Brackets</div>
+    <div class="ios-modal-body">
+      Add Brackets to your home screen for instant offline access.
+      <div class="step"><span class="step-icon">1️⃣</span><span>Tap the <strong>Share</strong> button at the bottom of your browser</span></div>
+      <div class="step"><span class="step-icon">2️⃣</span><span>Scroll down and tap <strong>"Add to Home Screen"</strong></span></div>
+      <div class="step"><span class="step-icon">3️⃣</span><span>Tap <strong>Add</strong> — the app icon will appear on your home screen</span></div>
+    </div>
+  </div>
+</div>
+
 <!-- FOOTER -->
 <footer>
-  <div class="footer-logo">BRACKET</div>
+  <div class="footer-logo">BRACKETS</div>
   <div class="footer-text">Built for the gaming cafe. Free for everyone.</div>
-  <div class="footer-handle">by <a href="https://github.com/kayo-isle69" target="_blank">@Komino_dev</a></div>
+  <div class="footer-handle">v1.2.1 · by <a href="https://github.com/kayo-isle69" target="_blank">@Komino_dev</a></div>
 </footer>
 
 <script>
@@ -581,6 +640,66 @@ var observer = new IntersectionObserver(function(entries) {
   });
 }, { threshold: 0.12 });
 reveals.forEach(function(el) { observer.observe(el); });
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/bracket/sw.js')
+      .then(function(reg) { console.log('SW registered:', reg.scope); })
+      .catch(function(err) { console.log('SW failed:', err); });
+  });
+}
+
+// ── PWA INSTALL ──
+var deferredPrompt = null;
+var installBtn     = document.getElementById('install-btn');
+var iosModal       = document.getElementById('ios-modal');
+var iosClose       = document.getElementById('ios-modal-close');
+
+// Detect iOS Safari
+var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+// Detect if already installed (running as standalone)
+var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+// Hide button if already installed
+if (isStandalone) {
+  installBtn.style.display = 'none';
+}
+
+// Android/Chrome: capture the install prompt
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+
+installBtn.addEventListener('click', function() {
+  if (isStandalone) return;
+
+  if (deferredPrompt) {
+    // Android Chrome — native install dialog
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(result) {
+      if (result.outcome === 'accepted') installBtn.style.display = 'none';
+      deferredPrompt = null;
+    });
+  } else if (isIOS) {
+    // iOS Safari — show manual instructions modal
+    iosModal.classList.add('show');
+  } else {
+    // Other browsers — link directly to app (they can bookmark it)
+    window.location.href = 'app.html';
+  }
+});
+
+// Close iOS modal
+iosClose.addEventListener('click', function() { iosModal.classList.remove('show'); });
+iosModal.addEventListener('click', function(e) { if (e.target === iosModal) iosModal.classList.remove('show'); });
+
+// Hide button once installed
+window.addEventListener('appinstalled', function() {
+  installBtn.style.display = 'none';
+  deferredPrompt = null;
+});
 </script>
 </body>
 </html>

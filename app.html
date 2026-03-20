@@ -3,8 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BRACKET</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Brackets">
+<meta name="theme-color" content="#0a0a0c">
+<title>Brackets</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root {
   --bg:         #0a0a0c;
@@ -190,6 +199,10 @@ body{background:var(--bg);color:#e8e8f0;font-family:'DM Sans',sans-serif;min-hei
 .cs{font-size:14px;color:var(--muted);margin-bottom:48px;opacity:0;animation:fadeUp .6s .6s forwards;}
 .again-btn{padding:14px 40px;background:none;border:1px solid var(--gold);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;border-radius:8px;cursor:pointer;transition:all .2s;opacity:0;animation:fadeUp .6s .8s forwards;}
 .again-btn:hover{background:rgba(240,180,41,.1);box-shadow:0 0 20px rgba(240,180,41,.2);}
+.export-btn{padding:14px 40px;background:none;border:1px solid var(--border);color:var(--silver);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;border-radius:8px;cursor:pointer;transition:all .2s;opacity:0;animation:fadeUp .6s 1s forwards;display:flex;align-items:center;gap:10px;}
+.export-btn:hover{border-color:var(--silver);color:var(--text);}
+.export-btn.loading{opacity:.5;pointer-events:none;}
+.winner-btns{display:flex;flex-direction:column;align-items:center;gap:14px;}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
@@ -262,7 +275,10 @@ body{background:var(--bg);color:#e8e8f0;font-family:'DM Sans',sans-serif;min-hei
   <div class="cl">Tournament Champion</div>
   <div class="cn" id="champ-name"></div>
   <div class="cs" id="champ-sub"></div>
-  <button class="again-btn" id="back-from-winner">Back to Menu</button>
+  <div class="winner-btns">
+    <button class="again-btn" id="back-from-winner">Back to Menu</button>
+    <button class="export-btn" id="export-btn">📥 Export Bracket as PNG</button>
+  </div>
 </div>
 
 <script>
@@ -745,7 +761,7 @@ function showChampionScreen(name, sub) {
   document.getElementById('champ-name').textContent = name;
   document.getElementById('champ-sub').textContent  = sub;
   // Reset animations
-  var els = document.querySelectorAll('.cl,.cn,.cs,.again-btn');
+  var els = document.querySelectorAll('.cl,.cn,.cs,.again-btn,.export-btn');
   els.forEach(function(e){ e.style.animation='none'; e.offsetHeight; e.style.animation=''; });
   show('winner');
 }
@@ -762,9 +778,95 @@ function updateBadge() {
 }
 
 // ══════════════════════════════════════════════════════════
+//  EXPORT BRACKET AS PNG
+// ══════════════════════════════════════════════════════════
+document.getElementById('export-btn').addEventListener('click', function() {
+  var btn = this;
+  if (!T) return;
+
+  btn.classList.add('loading');
+  btn.textContent = '⏳ Generating…';
+
+  // Build a hidden off-screen export container with full bracket + champion banner
+  var wrap = document.createElement('div');
+  wrap.style.cssText = [
+    'position:fixed', 'left:-9999px', 'top:0',
+    'background:#0a0a0c', 'padding:32px',
+    'font-family:DM Sans,sans-serif',
+    'color:#e8e8f0', 'min-width:800px',
+    'max-width:1400px', 'width:max-content'
+  ].join(';');
+
+  // Header bar
+  var header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid #2a2a35;';
+  header.innerHTML =
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:36px;letter-spacing:6px;color:#f0b429;">' + (T.name || 'BRACKETS') + '</div>' +
+    '<div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#555568;">' + new Date(T.createdAt).toLocaleDateString() + ' · ' + T.players.length + ' Players</div>';
+  wrap.appendChild(header);
+
+  // Clone the brackets container
+  var bracketClone = document.getElementById('brackets-container').cloneNode(true);
+  // Remove any interactive cursor hints
+  bracketClone.querySelectorAll('.mfoot.live').forEach(function(el){ el.textContent = ''; });
+  bracketClone.querySelectorAll('.mp.click').forEach(function(el){ el.style.cursor = 'default'; });
+  wrap.appendChild(bracketClone);
+
+  // Champion banner at the bottom
+  var banner = document.createElement('div');
+  banner.style.cssText = [
+    'margin-top:32px', 'padding:28px 32px',
+    'background:#17171d', 'border:1px solid #f0b429',
+    'border-radius:12px', 'text-align:center'
+  ].join(';');
+  banner.innerHTML =
+    '<div style="font-size:10px;letter-spacing:4px;text-transform:uppercase;color:#f0b429;margin-bottom:10px;">Tournament Champion</div>' +
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:52px;letter-spacing:4px;color:#e8e8f0;line-height:1;">' + T.champion + '</div>' +
+    '<div style="font-size:11px;color:#555568;margin-top:10px;letter-spacing:2px;">BRACKETS · v1.2.1 · kayo-isle69.github.io/bracket</div>';
+  wrap.appendChild(banner);
+
+  document.body.appendChild(wrap);
+
+  // Small delay to let fonts settle, then capture
+  setTimeout(function() {
+    html2canvas(wrap, {
+      backgroundColor: '#0a0a0c',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    }).then(function(canvas) {
+      document.body.removeChild(wrap);
+
+      // Trigger download
+      var link = document.createElement('a');
+      var safeName = (T.name || 'bracket').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      link.download = safeName + '_brackets_v1.2.1.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+
+      btn.classList.remove('loading');
+      btn.textContent = '📥 Export Bracket as PNG';
+    }).catch(function() {
+      document.body.removeChild(wrap);
+      btn.classList.remove('loading');
+      btn.textContent = '📥 Export Bracket as PNG';
+      alert('Export failed — try again.');
+    });
+  }, 300);
+});
+
+// ══════════════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════════════
 renderMenu();
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/bracket/sw.js')
+      .catch(function(err) { console.log('SW:', err); });
+  });
+}
 </script>
 </body>
 </html>
