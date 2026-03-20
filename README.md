@@ -4,7 +4,7 @@
 
 A double elimination tournament bracket manager built for real people who run real tournaments at gaming cafes, LAN parties, and local competitions.
 
-**Live:** [kayo-isle69.github.io/bracket](https://kayo-isle69.github.io/bracket)
+**→ Live: [kayo-isle69.github.io/bracket](https://kayo-isle69.github.io/bracket)**
 
 ---
 
@@ -23,13 +23,6 @@ A double elimination tournament bracket manager built for real people who run re
 |------|-------------|
 | `index.html` | Landing page with story and feature overview |
 | `app.html`   | The bracket app itself |
-
-## Deploy (GitHub Pages)
-
-1. Fork or clone this repo
-2. Go to **Settings → Pages**
-3. Source: **Deploy from branch → main → / (root)**
-4. Save — your site will be live at `https://kayo-isle69.github.io/bracket`
 
 ## Built By
 
