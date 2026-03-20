@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="BRACKET — A free, offline-first double elimination tournament manager. No sign-up. No ads. No internet required.">
+<meta property="og:title" content="BRACKET — Tournament Manager">
+<meta property="og:description" content="Free, offline, no account needed. Built for real people who run real tournaments.">
+<meta name="theme-color" content="#0a0a0c">
+<title>BRACKET — Tournament Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0a0a0c;
+  --surface:  #111115;
+  --card:     #17171d;
+  --border:   #2a2a35;
+  --gold:     #f0b429;
+  --gold-dim: #8a6510;
+  --silver:   #a0aec0;
+  --muted:    #555568;
+  --text:     #e8e8f0;
+  --losers:   #c05621;
+  --green:    #38a169;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ── NOISE GRAIN OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 1000; opacity: 0.5;
+}
+
+/* ── AMBIENT GLOW ── */
+.glow-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  z-index: 0;
+}
+.glow-1 { width: 600px; height: 600px; background: rgba(240,180,41,0.05); top: -200px; left: -200px; }
+.glow-2 { width: 500px; height: 500px; background: rgba(192,86,33,0.04); bottom: 20%; right: -150px; }
+.glow-3 { width: 400px; height: 400px; background: rgba(66,153,225,0.03); bottom: -100px; left: 30%; }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 40px;
+  background: rgba(10,10,12,0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(42,42,53,0.5);
+}
+.nav-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px; letter-spacing: 5px;
+  color: var(--gold);
+}
+.nav-launch {
+  padding: 9px 22px;
+  background: var(--gold); color: #000;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 14px; letter-spacing: 2px;
+  border: none; border-radius: 8px;
+  cursor: pointer; text-decoration: none;
+  transition: all 0.2s;
+  display: inline-block;
+}
+.nav-launch:hover { background: #f5c842; box-shadow: 0 0 24px rgba(240,180,41,0.35); transform: translateY(-1px); }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 120px 24px 80px;
+  position: relative; z-index: 1;
+}
+
+.hero-eyebrow {
+  font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 24px;
+  opacity: 0; animation: fadeUp 0.8s 0.2s forwards;
+  display: flex; align-items: center; gap: 12px;
+}
+.hero-eyebrow::before, .hero-eyebrow::after {
+  content: ''; width: 32px; height: 1px; background: var(--gold-dim);
+}
+
+.hero-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(80px, 18vw, 180px);
+  letter-spacing: 8px; line-height: 0.9;
+  color: var(--text);
+  opacity: 0; animation: fadeUp 0.8s 0.35s forwards;
+  position: relative;
+}
+.hero-title .gold { color: var(--gold); }
+
+.hero-tagline {
+  font-size: clamp(15px, 2.5vw, 19px);
+  color: var(--silver); font-weight: 300;
+  max-width: 560px; margin: 28px auto 0;
+  line-height: 1.7;
+  opacity: 0; animation: fadeUp 0.8s 0.5s forwards;
+}
+.hero-tagline em { color: var(--text); font-style: normal; font-weight: 500; }
+
+.hero-cta-row {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  justify-content: center; margin-top: 48px;
+  opacity: 0; animation: fadeUp 0.8s 0.65s forwards;
+}
+.cta-primary {
+  padding: 16px 40px;
+  background: var(--gold); color: #000;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; letter-spacing: 3px;
+  border: none; border-radius: 10px;
+  cursor: pointer; text-decoration: none;
+  transition: all 0.2s; display: inline-block;
+}
+.cta-primary:hover { background: #f5c842; box-shadow: 0 0 40px rgba(240,180,41,0.4); transform: translateY(-2px); }
+.cta-secondary {
+  padding: 16px 32px;
+  background: none; color: var(--silver);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px; letter-spacing: 1px;
+  border: 1px solid var(--border); border-radius: 10px;
+  cursor: pointer; text-decoration: none;
+  transition: all 0.2s; display: inline-block;
+}
+.cta-secondary:hover { border-color: var(--silver); color: var(--text); }
+
+.hero-pills {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  justify-content: center; margin-top: 40px;
+  opacity: 0; animation: fadeUp 0.8s 0.8s forwards;
+}
+.pill {
+  font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--border); color: var(--muted);
+  display: flex; align-items: center; gap: 6px;
+}
+.pill-dot { width: 6px; height: 6px; border-radius: 50%; }
+.pill-green  .pill-dot { background: var(--green); }
+.pill-gold   .pill-dot { background: var(--gold); }
+.pill-orange .pill-dot { background: var(--losers); }
+
+/* ── SCROLL INDICATOR ── */
+.scroll-hint {
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  color: var(--muted); font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  opacity: 0; animation: fadeUp 1s 1.2s forwards;
+}
+.scroll-arrow { animation: bounce 2s ease-in-out infinite; font-size: 16px; }
+
+/* ── SECTION SHARED ── */
+section {
+  position: relative; z-index: 1;
+  padding: 100px 24px;
+}
+.container { max-width: 1000px; margin: 0 auto; }
+.section-tag {
+  font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 16px;
+}
+.section-heading {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(36px, 6vw, 64px);
+  letter-spacing: 3px; line-height: 1.05;
+  margin-bottom: 20px;
+}
+.section-body {
+  font-size: 16px; color: var(--silver);
+  line-height: 1.8; max-width: 680px;
+}
+.section-body p + p { margin-top: 16px; }
+.section-body em { color: var(--text); font-style: normal; }
+
+/* ── DIVIDER ── */
+.divider {
+  width: 100%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 0 auto;
+}
+
+/* ── STORY SECTION ── */
+#story { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.story-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 60px; align-items: start; margin-top: 56px;
+}
+.story-col-left .section-heading { color: var(--gold); }
+.story-quote {
+  border-left: 2px solid var(--gold-dim);
+  padding-left: 20px; margin-top: 32px;
+  font-size: 15px; color: var(--muted);
+  font-style: italic; line-height: 1.8;
+}
+.story-problems {
+  display: flex; flex-direction: column; gap: 14px; margin-top: 28px;
+}
+.problem-item {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 16px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 10px;
+  transition: border-color 0.2s;
+}
+.problem-item:hover { border-color: #3a3a48; }
+.problem-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+.problem-text { font-size: 13px; color: var(--silver); line-height: 1.6; }
+.problem-text strong { color: var(--text); display: block; margin-bottom: 2px; font-size: 13px; }
+
+/* ── FEATURES SECTION ── */
+#features { padding-top: 100px; padding-bottom: 100px; }
+.features-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 20px; margin-top: 56px;
+}
+.feat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 28px;
+  transition: border-color 0.2s, transform 0.2s;
+  position: relative; overflow: hidden;
+}
+.feat-card::before {
+  content: ''; position: absolute;
+  top: 0; left: 20px; right: 20px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+.feat-card:hover { border-color: #3a3a48; transform: translateY(-3px); }
+.feat-icon { font-size: 26px; margin-bottom: 16px; }
+.feat-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; margin-bottom: 10px; }
+.feat-desc { font-size: 13px; color: var(--silver); line-height: 1.7; }
+.feat-card.highlight { border-color: var(--gold-dim); }
+.feat-card.highlight::before { background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+.feat-card.highlight .feat-title { color: var(--gold); }
+
+/* ── BRACKET FORMAT SECTION ── */
+#format { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.format-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 56px; }
+.format-card {
+  border: 1px solid var(--border); border-radius: 14px; padding: 32px;
+  background: var(--card); position: relative;
+}
+.format-badge {
+  position: absolute; top: -12px; left: 24px;
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 10px; font-weight: 600;
+}
+.badge-w { background: rgba(240,180,41,.15); color: var(--gold); border: 1px solid var(--gold-dim); }
+.badge-l { background: rgba(192,86,33,.15); color: var(--losers); border: 1px solid #7b3a15; }
+.format-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; margin-bottom: 12px; }
+.format-desc { font-size: 13px; color: var(--silver); line-height: 1.7; margin-bottom: 20px; }
+.format-steps { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.format-steps li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: var(--muted);
+}
+.step-num {
+  font-family: 'Bebas Neue', sans-serif; font-size: 11px;
+  color: var(--gold); background: rgba(240,180,41,.1);
+  border: 1px solid var(--gold-dim); border-radius: 4px;
+  padding: 2px 7px; flex-shrink: 0; margin-top: 1px;
+}
+.step-num.orange { color: var(--losers); background: rgba(192,86,33,.1); border-color: #7b3a15; }
+
+/* ── LAUNCH SECTION ── */
+#launch {
+  text-align: center; padding: 120px 24px;
+}
+.launch-inner { max-width: 560px; margin: 0 auto; }
+.launch-inner .section-heading { color: var(--gold); }
+.launch-body { font-size: 16px; color: var(--silver); line-height: 1.8; margin: 20px 0 44px; }
+.launch-cta {
+  padding: 18px 56px;
+  background: var(--gold); color: #000;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; letter-spacing: 4px;
+  border: none; border-radius: 12px;
+  cursor: pointer; text-decoration: none;
+  transition: all 0.2s; display: inline-block;
+}
+.launch-cta:hover { background: #f5c842; box-shadow: 0 0 50px rgba(240,180,41,0.4); transform: translateY(-2px); }
+.launch-note { font-size: 11px; color: var(--muted); margin-top: 20px; letter-spacing: 1px; }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px;
+  position: relative; z-index: 1;
+}
+.footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 4px; color: var(--gold-dim); }
+.footer-text { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+.footer-handle { font-size: 11px; color: var(--muted); }
+.footer-handle a { color: var(--silver); text-decoration: none; }
+.footer-handle a:hover { color: var(--gold); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(8px); }
+}
+
+/* Scroll-triggered reveals */
+.reveal {
+  opacity: 0; transform: translateY(32px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-5 { transition-delay: 0.5s; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  nav { padding: 14px 20px; }
+  .story-grid { grid-template-columns: 1fr; gap: 36px; }
+  .features-grid { grid-template-columns: 1fr 1fr; }
+  .format-grid { grid-template-columns: 1fr; }
+  footer { flex-direction: column; text-align: center; }
+}
+@media (max-width: 500px) {
+  .features-grid { grid-template-columns: 1fr; }
+  .hero-cta-row { flex-direction: column; align-items: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="glow-orb glow-1"></div>
+<div class="glow-orb glow-2"></div>
+<div class="glow-orb glow-3"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">BRACKET</div>
+  <a href="app.html" class="nav-launch">Launch App →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">Tournament Manager</div>
+  <h1 class="hero-title">
+    <span class="gold">BRACKET</span>
+  </h1>
+  <p class="hero-tagline">
+    A <em>free, offline-first</em> tournament bracket manager built for real people who run real tournaments — no account, no ads, no internet required.
+  </p>
+  <div class="hero-cta-row">
+    <a href="app.html" class="cta-primary">Launch the App →</a>
+    <a href="#story" class="cta-secondary">Read the Story</a>
+  </div>
+  <div class="hero-pills">
+    <div class="pill pill-green"><span class="pill-dot"></span>100% Free</div>
+    <div class="pill pill-gold"><span class="pill-dot"></span>Works Offline</div>
+    <div class="pill pill-orange"><span class="pill-dot"></span>No Account Needed</div>
+    <div class="pill pill-green"><span class="pill-dot"></span>No Ads. Ever.</div>
+  </div>
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <span class="scroll-arrow">↓</span>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- STORY -->
+<section id="story">
+  <div class="container">
+    <div class="story-grid">
+      <div class="story-col-left">
+        <div class="section-tag reveal">Origin Story</div>
+        <h2 class="section-heading reveal reveal-delay-1">Built from a Real Problem,<br>at a Real Cafe.</h2>
+        <div class="section-body reveal reveal-delay-2">
+          <p>
+            It started the way most good ideas do — with frustration. At our local gaming cafe, competitive matches were a weekly ritual. Different people showed up every session, lineups constantly shifted, and the energy was always high. So when a tournament broke out, we ran it the only way we knew how: <em>paper brackets drawn on whatever surface was available.</em>
+          </p>
+          <p>
+            It sounds simple. It never was.
+          </p>
+          <p>
+            We lost track of seedings. Someone always got accidentally skipped. The loser's bracket — when we even attempted one — turned into a mess of arrows, crossed-out names, and arguments about who was supposed to play whom. By the time we figured out the bracket, half the excitement was already gone.
+          </p>
+          <p>
+            We searched for apps and websites to help. What we found was a wall of friction: <em>mandatory accounts, paywalled features, and ads interrupting every interaction.</em> Most of them required an internet connection at all times — which doesn't work when you're in a local gaming session that's completely offline.
+          </p>
+          <p>
+            So the decision was made: build something better. Something built for the actual moment — fast to set up, easy for any host to run, and completely free to use. No sign-in. No subscriptions. No interruptions. Just the bracket, the players, and the game.
+          </p>
+          <p>
+            <em>BRACKET</em> is the result of that decision. Version one. Built to work offline, accessible from any browser, saved locally on your device. The tournament belongs to you — and it's ready the moment you need it.
+          </p>
+        </div>
+        <div class="story-quote reveal reveal-delay-3">
+          "We needed more time for the actual tournament and less time figuring out the bracket. So I built the tool that should have already existed."
+        </div>
+      </div>
+
+      <div class="story-col-right">
+        <div class="section-tag reveal">The Problems We Solved</div>
+        <div class="story-problems">
+          <div class="problem-item reveal reveal-delay-1">
+            <div class="problem-icon">📄</div>
+            <div class="problem-text">
+              <strong>Paper brackets are unreliable</strong>
+              Crossed-out names, arrows pointing everywhere, arguments about the correct match order — every paper bracket eventually became unreadable.
+            </div>
+          </div>
+          <div class="problem-item reveal reveal-delay-2">
+            <div class="problem-icon">🔢</div>
+            <div class="problem-text">
+              <strong>Loser bracket math is hard</strong>
+              Nobody ever knew exactly how many matches the loser's bracket needed to reach a clean final. The count was always wrong.
+            </div>
+          </div>
+          <div class="problem-item reveal reveal-delay-3">
+            <div class="problem-icon">🌐</div>
+            <div class="problem-text">
+              <strong>Online tools required internet</strong>
+              Playing a local LAN session? Most tournament websites broke completely without a connection. A local app shouldn't need the web to function.
+            </div>
+          </div>
+          <div class="problem-item reveal reveal-delay-4">
+            <div class="problem-icon">🔒</div>
+            <div class="problem-text">
+              <strong>Accounts and paywalls everywhere</strong>
+              Every app wanted a sign-in for the host or a payment to unlock basic features. A bracket is a bracket — it shouldn't cost anything.
+            </div>
+          </div>
+          <div class="problem-item reveal reveal-delay-5">
+            <div class="problem-icon">📢</div>
+            <div class="problem-text">
+              <strong>Ads at every step</strong>
+              Between every match. Before every round. Ads that reset the page, broke the bracket state, or simply got in the way of the moment.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <div class="section-tag reveal">What It Does</div>
+    <h2 class="section-heading reveal reveal-delay-1">Everything You Need.<br>Nothing You Don't.</h2>
+    <div class="features-grid">
+      <div class="feat-card highlight reveal reveal-delay-1">
+        <div class="feat-icon">⚡</div>
+        <div class="feat-title">Works Offline</div>
+        <div class="feat-desc">No internet connection needed. Open the app from a bookmark, a saved file, or a USB drive. The entire bracket lives on your device.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-2">
+        <div class="feat-icon">🏆</div>
+        <div class="feat-title">Double Elimination</div>
+        <div class="feat-desc">Full winners and losers bracket, automatically calculated. One loss doesn't end your tournament. The grand final reset match is handled for you.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-3">
+        <div class="feat-icon">🎲</div>
+        <div class="feat-title">Flexible Player Count</div>
+        <div class="feat-desc">4, 8, 16, or 32 players. Randomize seedings with one tap, or enter them in your preferred order.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-2">
+        <div class="feat-icon">💾</div>
+        <div class="feat-title">Saved Tournaments</div>
+        <div class="feat-desc">Every tournament is stored locally on the device. Close the app, come back tomorrow, and your bracket is exactly where you left it.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-3">
+        <div class="feat-icon">👆</div>
+        <div class="feat-title">One-Tap Results</div>
+        <div class="feat-desc">Tap the winner's name to advance them. Losers are automatically routed to the correct bracket slot. No manual entry, no mistakes.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-4">
+        <div class="feat-icon">🚫</div>
+        <div class="feat-title">Zero Ads. Zero Fees.</div>
+        <div class="feat-desc">No banner ads, no interstitials, no "upgrade to unlock" prompts. The full app is free. It will always be free.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FORMAT -->
+<section id="format">
+  <div class="container">
+    <div class="section-tag reveal">How It Works</div>
+    <h2 class="section-heading reveal reveal-delay-1">Two Brackets.<br>One Champion.</h2>
+    <div class="section-body reveal reveal-delay-2">
+      <p>BRACKET uses double elimination — the fairest format for competitive play. Every player is guaranteed at least two matches before they're out, and the final champion has truly proven themselves against the whole field.</p>
+    </div>
+    <div class="format-grid" style="margin-top: 48px;">
+      <div class="format-card reveal reveal-delay-2">
+        <div class="format-badge badge-w">Winners Bracket</div>
+        <div class="format-title">Stay Undefeated</div>
+        <div class="format-desc">Players who haven't lost compete here. Win your way through to the Grand Final and you enter as the favorites — with a built-in advantage.</div>
+        <ul class="format-steps">
+          <li><span class="step-num">1</span>Players are seeded and matched in Round 1</li>
+          <li><span class="step-num">2</span>Winners advance to the next round</li>
+          <li><span class="step-num">3</span>Losers drop to the Losers Bracket — they're not out yet</li>
+          <li><span class="step-num">4</span>The last undefeated player reaches the Grand Final</li>
+        </ul>
+      </div>
+      <div class="format-card reveal reveal-delay-3">
+        <div class="format-badge badge-l">Losers Bracket</div>
+        <div class="format-title">Fight Your Way Back</div>
+        <div class="format-desc">One loss sends you here — but it's not over. Survive every match in the losers bracket and you earn your shot at the Grand Final.</div>
+        <ul class="format-steps">
+          <li><span class="step-num orange">1</span>Losers from the Winners Bracket enter each round</li>
+          <li><span class="step-num orange">2</span>They face the survivors already fighting in the bracket</li>
+          <li><span class="step-num orange">3</span>A second loss means elimination — no more chances</li>
+          <li><span class="step-num orange">4</span>The final survivor reaches the Grand Final</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- LAUNCH -->
+<section id="launch">
+  <div class="launch-inner">
+    <div class="section-tag reveal" style="text-align:center;">Ready to Play</div>
+    <h2 class="section-heading reveal reveal-delay-1">Start Your<br>Tournament Now.</h2>
+    <p class="launch-body reveal reveal-delay-2">
+      No setup. No account. No loading screen. Just open the app, enter your players, and the bracket is ready in under a minute.
+    </p>
+    <a href="app.html" class="launch-cta reveal reveal-delay-3">Open BRACKET →</a>
+    <p class="launch-note reveal reveal-delay-4">Works on any device · Saves locally · 100% free</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">BRACKET</div>
+  <div class="footer-text">Built for the gaming cafe. Free for everyone.</div>
+  <div class="footer-handle">by <a href="https://github.com/kayo-isle69" target="_blank">@Komino_dev</a></div>
+</footer>
+
+<script>
+// Scroll reveal
+var reveals = document.querySelectorAll('.reveal');
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.12 });
+reveals.forEach(function(el) { observer.observe(el); });
+</script>
+</body>
+</html>
